@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Recorded sessions (keep fixtures)
+*.eeg
+!tests/fixtures/**
+experiments/**/raw/
+experiments/**/derived/
+
+# Firmware / PlatformIO
+firmware/esp32s3/.pio/
+firmware/esp32s3/.vscode/
+*.elf
+*.bin
+*.map
+
+# Hardware CAD clutter
+*.kicad_prl
+*-backups/
+~*
+
+# OS / editor
+.DS_Store
+.idea/
+*.swp
