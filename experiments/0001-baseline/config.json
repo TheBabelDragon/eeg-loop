@@ -1,0 +1,15 @@
+{
+  "experiment_id": "0001-baseline",
+  "date": null,
+  "hardware_revision": null,
+  "firmware_revision": null,
+  "software_revision": "0.1.0-scaffold",
+  "sample_rate": null,
+  "channel_configuration": "1-2 active + reference + bias (TBD)",
+  "electrode_configuration": "Ag/AgCl, placement TBD",
+  "stimulus_configuration": "none",
+  "controller_configuration": "none",
+  "raw_data_location": "experiments/0001-baseline/raw/",
+  "derived_data_location": "experiments/0001-baseline/derived/",
+  "results": "experiments/0001-baseline/results/"
+}
