@@ -25,6 +25,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--sample-rate", type=float, default=250.0)
     parser.add_argument("--channels", type=int, default=2)
     parser.add_argument("--samples", type=int, default=250)
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="allow replacing an existing session (default: refuse)",
+    )
     args = parser.parse_args(argv)
 
     if not args.synthetic:
@@ -36,12 +41,21 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
 
+    if args.output.exists() and not args.overwrite:
+        print(
+            f"eeg-record: refusing to overwrite existing session {args.output}\n"
+            "  pass --overwrite only for controlled fixtures.",
+            file=sys.stderr,
+        )
+        return 1
+
     write_synthetic(
         args.output,
         session_id=args.output.stem,
         sample_rate=args.sample_rate,
         channel_count=args.channels,
         n_samples=args.samples,
+        overwrite=args.overwrite or not args.output.exists(),
     )
     print(f"wrote synthetic session {args.output}")
     return 0
