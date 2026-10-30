@@ -4,6 +4,7 @@ from pathlib import Path
 
 from host.eegstream.session import (
     EEGPacket,
+    PacketValidationError,
     SessionHeader,
     SessionReader,
     SessionWriter,
@@ -32,10 +33,11 @@ class SessionProtocolTests(unittest.TestCase):
                 channel_count=1,
                 channel_names=["ch1"],
                 source="test",
+                created_at="2026-01-01T00:00:00Z",
             )
             with SessionWriter(path, header) as w:
                 w.write_packet(EEGPacket(0, 0, 100.0, 1, [[0.0]]))
-                with self.assertRaises(ValueError):
+                with self.assertRaises(PacketValidationError):
                     w.write_packet(EEGPacket(2, 10000, 100.0, 1, [[1.0]]))
 
 

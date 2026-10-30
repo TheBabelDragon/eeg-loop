@@ -1,5 +1,41 @@
 """Immutable EEGStream session I/O."""
 
-from .session import SessionHeader, EEGPacket, SessionReader, SessionWriter
+from .session import (
+    ContinuityDiagnostics,
+    EEGPacket,
+    FORMAT,
+    PacketValidationError,
+    SessionError,
+    SessionFinalization,
+    SessionHeader,
+    SessionHeaderError,
+    SessionIncompleteError,
+    SessionIntegrityError,
+    SessionReader,
+    SessionWriter,
+    SUPPORTED_VERSIONS,
+    VERSION_V1,
+    VERSION_V2,
+    compute_content_digest,
+    write_synthetic,
+)
 
-__all__ = ["SessionHeader", "EEGPacket", "SessionReader", "SessionWriter"]
+__all__ = [
+    "ContinuityDiagnostics",
+    "EEGPacket",
+    "FORMAT",
+    "PacketValidationError",
+    "SessionError",
+    "SessionFinalization",
+    "SessionHeader",
+    "SessionHeaderError",
+    "SessionIncompleteError",
+    "SessionIntegrityError",
+    "SessionReader",
+    "SessionWriter",
+    "SUPPORTED_VERSIONS",
+    "VERSION_V1",
+    "VERSION_V2",
+    "compute_content_digest",
+    "write_synthetic",
+]
