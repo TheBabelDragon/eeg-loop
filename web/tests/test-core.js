@@ -8,6 +8,7 @@ import { SyntheticEEGSource } from "../js/core/SyntheticEEGSource.js";
 import { ArtifactDetector } from "../js/core/ArtifactDetector.js";
 import { SignalAnalyzer } from "../js/core/SignalAnalyzer.js";
 import { SessionRecorder, SessionPlayer } from "../js/session/SessionRecorder.js";
+import { EEGPacketSource, parseSessionJsonl } from "../js/core/EEGPacketSource.js";
 
 const results = [];
 function assert(cond, msg) {
@@ -108,6 +109,38 @@ function assertClose(a, b, eps, msg) {
 {
   assert(nextPow2(300) === 512, "nextPow2(300)=512");
   assert(nextPow2(512) === 512, "nextPow2(512)=512");
+}
+
+{
+  const header = {
+    format: "eeg-loop.session", version: 2, session_id: "t1",
+    sample_rate: 250, channel_count: 2, channel_names: ["ch0","ch1"],
+    source: "synthetic", created_at: "2026-01-01T00:00:00Z",
+  };
+  const pkt0 = {
+    sequence: 0, timestamp_us: 0, sample_rate: 250, channel_count: 2,
+    samples: [[1, 2], [3, 4], [5, 6]], status: 0, quality: 1,
+  };
+  const pkt1 = {
+    sequence: 1, timestamp_us: 12000, sample_rate: 250, channel_count: 2,
+    samples: [[7, 8]], status: 0, quality: 1,
+  };
+  const fin = { record_type: "finalization", session_id: "t1", status: "finalized" };
+  const jsonl = [header, pkt0, pkt1, fin].map((o) => JSON.stringify(o)).join("\n") + "\n";
+  const parsed = parseSessionJsonl(jsonl);
+  assert(parsed.packets.length === 2, "parseSessionJsonl skips finalization");
+  assert(parsed.header.session_id === "t1", "parseSessionJsonl header");
+  assert(parsed.diagnostics.length === 0, "clean session has no diagnostics");
+  const src = new EEGPacketSource({ rawJsonl: jsonl });
+  assert(src.frameCount === 4, "EEGPacketSource expands packet rows to frames");
+  const collected = [];
+  for (const f of src.frames()) collected.push(Array.from(f.frame));
+  assert(collected.length === 4 && collected[0][0] === 1 && collected[3][0] === 7,
+    "EEGPacketSource frame order matches packet samples");
+  const gapPkt = { ...pkt1, sequence: 5 };
+  const gapJsonl = [header, pkt0, gapPkt].map((o) => JSON.stringify(o)).join("\n");
+  const gapParsed = parseSessionJsonl(gapJsonl);
+  assert(gapParsed.diagnostics.some((d) => d.includes("gap")), "sequence gap is diagnosed, not repaired");
 }
 
 const passed = results.filter((r) => r.ok).length;
