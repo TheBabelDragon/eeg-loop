@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>eeg-loop web lab — tests</title>
+  <style>
+    body { background: #0b0e14; color: #c8d0dc; font-family: monospace; padding: 1.5rem; }
+    h1 { color: #3d9cf0; font-size: 1rem; }
+    #out { white-space: pre-wrap; line-height: 1.5; }
+    .ok { color: #3ecf8e; }
+    .fail { color: #e05c5c; }
+  </style>
+</head>
+<body>
+  <h1>eeg-loop Browser Lab — core tests</h1>
+  <div id="out">Running…</div>
+  <script type="module">
+    import { results, passed, failed } from "./test-core.js";
+    const out = document.getElementById("out");
+    let html = "";
+    for (const r of results) {
+      html += `<div class="${r.ok ? "ok" : "fail"}">${r.ok ? "ok" : "FAIL"} — ${r.msg}</div>`;
+    }
+    html += `\n<strong>${passed} passed, ${failed} failed</strong>`;
+    out.innerHTML = html;
+  </script>
+</body>
+</html>

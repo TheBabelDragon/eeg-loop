@@ -28,13 +28,21 @@ def _goertzel_power(xs: Sequence[float], sample_rate: float, freq: float) -> flo
 
 
 def band_power(xs: Sequence[float], sample_rate: float, lo: float, hi: float, steps: int = 6) -> float:
-    if hi <= lo:
+    """Mean Goertzel power over band, normalized by window length N.
+
+    Raw Goertzel magnitude-squared grows with N; dividing by N keeps absolute
+    band powers roughly comparable across different packet/window sizes.
+    Relative powers (rel_*) already cancel N and remain the preferred metric.
+    Increase steps (e.g. 12–16) for denser probing of narrow alpha peaks.
+    """
+    if hi <= lo or not xs:
         return 0.0
+    n = len(xs)
     acc = 0.0
     for i in range(steps):
         f = lo + (hi - lo) * (i + 0.5) / steps
         acc += _goertzel_power(xs, sample_rate, f)
-    return acc / steps
+    return (acc / steps) / n
 
 
 def spectral_entropy(powers: Sequence[float]) -> float:

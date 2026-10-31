@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>eeg-loop · Browser EEG Laboratory</title>
+  <meta name="description" content="Experimental browser EEG visualization. All signals are SIMULATED." />
+  <link rel="stylesheet" href="css/lab.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="top-bar">
+      <div class="brand">
+        <span class="logo">EEG-LOOP</span>
+        <span class="subtitle">Browser Laboratory</span>
+        <span class="badge sim">SIMULATED</span>
+      </div>
+      <div class="status-bar">
+        <span id="sample-rate-display">— Hz</span>
+        <span id="elapsed-display">0.00 s</span>
+        <span id="buffer-display">buf —</span>
+        <span id="gen-state" class="state stopped">STOPPED</span>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="scope-panel">
+        <div class="view-tabs">
+          <button class="tab active" data-view="waveform">Waveform</button>
+          <button class="tab" data-view="spectrum">Spectrum</button>
+        </div>
+        <div id="waveform-view" class="view active">
+          <canvas id="waveform-canvas"></canvas>
+          <div id="channel-labels" class="channel-labels"></div>
+        </div>
+        <div id="spectrum-view" class="view">
+          <canvas id="spectrum-canvas"></canvas>
+          <div class="band-legend">
+            <span class="band delta">δ 0.5–4</span>
+            <span class="band theta">θ 4–8</span>
+            <span class="band alpha">α 8–13</span>
+            <span class="band beta">β 13–30</span>
+            <span class="band gamma">γ 30–45</span>
+          </div>
+        </div>
+        <div class="scope-controls">
+          <button id="btn-pause">⏸ Pause</button>
+          <button id="btn-resume" disabled>▶ Resume</button>
+          <button id="btn-reset">⟲ Reset</button>
+          <button id="btn-freeze">❄ Freeze</button>
+          <label>Timebase
+            <select id="timebase">
+              <option value="0.5">0.5 s</option>
+              <option value="1" selected>1 s</option>
+              <option value="2">2 s</option>
+              <option value="4">4 s</option>
+              <option value="8">8 s</option>
+            </select>
+          </label>
+          <label>Amp scale
+            <input type="range" id="amp-scale" min="0.1" max="5" step="0.1" value="1" />
+            <span id="amp-scale-val">1.0×</span>
+          </label>
+        </div>
+      </section>
+
+      <aside class="control-panel">
+        <section class="panel-section">
+          <h3>Generator</h3>
+          <div class="btn-row">
+            <button id="btn-start" class="primary">Start</button>
+            <button id="btn-stop" disabled>Stop</button>
+          </div>
+          <label>Seed <input type="number" id="seed" value="42" min="0" step="1" /></label>
+          <label>Sample rate
+            <select id="sample-rate">
+              <option value="128">128 Hz</option>
+              <option value="250" selected>250 Hz</option>
+              <option value="500">500 Hz</option>
+            </select>
+          </label>
+          <label>Master amp
+            <input type="range" id="master-amp" min="0" max="2" step="0.05" value="1" />
+            <span id="master-amp-val">1.00</span>
+          </label>
+          <label>Noise
+            <input type="range" id="noise" min="0" max="1" step="0.02" value="0.08" />
+            <span id="noise-val">0.08</span>
+          </label>
+        </section>
+
+        <section class="panel-section">
+          <h3>Bands</h3>
+          <div class="band-sliders">
+            <label>δ <input type="range" id="band-delta" min="0" max="1" step="0.02" value="0.25" /><span>0.25</span></label>
+            <label>θ <input type="range" id="band-theta" min="0" max="1" step="0.02" value="0.35" /><span>0.35</span></label>
+            <label>α <input type="range" id="band-alpha" min="0" max="1" step="0.02" value="0.70" /><span>0.70</span></label>
+            <label>β <input type="range" id="band-beta" min="0" max="1" step="0.02" value="0.30" /><span>0.30</span></label>
+            <label>γ <input type="range" id="band-gamma" min="0" max="1" step="0.02" value="0.12" /><span>0.12</span></label>
+          </div>
+        </section>
+
+        <section class="panel-section">
+          <h3>Artifacts</h3>
+          <div class="btn-row wrap">
+            <button id="art-blink">Eye blink</button>
+            <button id="art-muscle">Muscle</button>
+            <button id="art-disconnect">Disconnect</button>
+            <button id="art-line">50/60 Hz</button>
+            <button id="art-spike">Spike</button>
+          </div>
+          <label>Line freq
+            <select id="line-freq">
+              <option value="50">50 Hz</option>
+              <option value="60" selected>60 Hz</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="panel-section">
+          <h3>Presets</h3>
+          <select id="preset">
+            <option value="">— select —</option>
+            <option value="clean-alpha">Clean alpha-dominant</option>
+            <option value="mixed">Mixed background</option>
+            <option value="slow-wave">Slow-wave dominant</option>
+            <option value="hf-noise">High-frequency noise</option>
+            <option value="blink">Eye-blink contamination</option>
+            <option value="disconnect">Electrode disconnect</option>
+            <option value="noisy">Noisy recording</option>
+          </select>
+        </section>
+
+        <section class="panel-section">
+          <h3>Channels</h3>
+          <div id="channel-toggles" class="channel-toggles"></div>
+        </section>
+
+        <section class="panel-section">
+          <h3>Recording</h3>
+          <div class="btn-row">
+            <button id="btn-rec-start">● Record</button>
+            <button id="btn-rec-stop" disabled>■ Stop</button>
+          </div>
+          <div class="btn-row">
+            <button id="btn-export">Export</button>
+            <button id="btn-replay">Replay</button>
+          </div>
+          <div id="rec-status" class="muted">Idle</div>
+        </section>
+
+        <section class="panel-section analysis">
+          <h3>Live Analysis <span class="muted">(ch 0)</span></h3>
+          <div id="analysis-panel" class="analysis-grid">
+            <div><span class="k">RMS</span><span id="a-rms">—</span></div>
+            <div><span class="k">Pk-Pk</span><span id="a-pp">—</span></div>
+            <div><span class="k">Mean</span><span id="a-mean">—</span></div>
+            <div><span class="k">Var</span><span id="a-var">—</span></div>
+            <div><span class="k">Dom f</span><span id="a-dom">—</span></div>
+            <div><span class="k">Artifact</span><span id="a-art">—</span></div>
+            <div class="full"><span class="k">δ</span><span id="a-delta">—</span></div>
+            <div class="full"><span class="k">θ</span><span id="a-theta">—</span></div>
+            <div class="full"><span class="k">α</span><span id="a-alpha">—</span></div>
+            <div class="full"><span class="k">β</span><span id="a-beta">—</span></div>
+            <div class="full"><span class="k">γ</span><span id="a-gamma">—</span></div>
+            <div class="full quality"><span class="k">Quality</span><span id="a-qual">—</span></div>
+          </div>
+          <div id="inference-state" class="inference-state">—</div>
+        </section>
+      </aside>
+    </main>
+
+    <footer class="footer">
+      <span>Experimental visualization only · Not a medical device · All signals SIMULATED</span>
+      <span>eeg-loop · TheBabelDragon</span>
+    </footer>
+  </div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
