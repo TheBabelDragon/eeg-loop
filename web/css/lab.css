@@ -58,3 +58,17 @@ input[type=number],select{background:#0e1219;border:1px solid var(--border);colo
 .inference-state.valid{border-color:#1a3a2a;color:var(--ok)}
 .footer{display:flex;justify-content:space-between;padding:.3rem 1rem;background:var(--panel);border-top:1px solid var(--border);font-size:.65rem;color:var(--muted);flex-shrink:0}
 @media(max-width:800px){.workspace{flex-direction:column}.control-panel{width:100%;max-height:40vh}.scope-panel{border-right:none}}
+
+.file-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--border, #333);
+  border-radius: 4px;
+  background: var(--panel-2, #1a1a22);
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.file-btn:hover { border-color: var(--accent, #6af); }

@@ -27,16 +27,38 @@ def _goertzel_power(xs: Sequence[float], sample_rate: float, freq: float) -> flo
     return s1 * s1 + s2 * s2 - coeff * s1 * s2
 
 
-def band_power(xs: Sequence[float], sample_rate: float, lo: float, hi: float, steps: int = 6) -> float:
+def _default_steps(lo: float, hi: float) -> int:
+    """Band-aware Goertzel density. Alpha gets denser probes for IAF tracking."""
+    width = hi - lo
+    # ~0.4 Hz spacing on alpha (8–13); coarser on wide bands
+    if lo >= 7.5 and hi <= 14.0:
+        return max(12, int(round(width / 0.4)))
+    if width <= 5.0:
+        return 10
+    return 6
+
+
+def band_power(
+    xs: Sequence[float],
+    sample_rate: float,
+    lo: float,
+    hi: float,
+    steps: int | None = None,
+) -> float:
     """Mean Goertzel power over band, normalized by window length N.
 
     Raw Goertzel magnitude-squared grows with N; dividing by N keeps absolute
     band powers roughly comparable across different packet/window sizes.
     Relative powers (rel_*) already cancel N and remain the preferred metric.
-    Increase steps (e.g. 12–16) for denser probing of narrow alpha peaks.
+
+    Default step density is band-aware: alpha uses ~12–16 probes (~0.4 Hz)
+    so a narrow individual-alpha peak is less likely to fall between bins.
+    Pass steps= explicitly to override.
     """
     if hi <= lo or not xs:
         return 0.0
+    if steps is None:
+        steps = _default_steps(lo, hi)
     n = len(xs)
     acc = 0.0
     for i in range(steps):
