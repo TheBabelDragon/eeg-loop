@@ -8,6 +8,7 @@ import { SignalAnalyzer } from "./core/SignalAnalyzer.js";
 import { WaveformRenderer } from "./render/WaveformRenderer.js";
 import { SpectrumRenderer } from "./render/SpectrumRenderer.js";
 import { SessionRecorder, SessionPlayer } from "./session/SessionRecorder.js";
+import { EEGPacketSource } from "./core/EEGPacketSource.js";
 
 const CHANNEL_COUNT = 4;
 const BUFFER_CAP = 8192;
@@ -142,14 +143,14 @@ function bindControls() {
   document.getElementById("art-muscle").addEventListener("click", () => source?.injectMuscle());
   document.getElementById("art-disconnect").addEventListener("click", () => {
     if (!source) return;
-    if (source.artifacts.disconnect.active) source.clearDisconnect();
-    else source.injectDisconnect(0);
+    if (source.artifacts?.disconnect?.active) source.clearDisconnect();
+    else source.injectDisconnect?.(0);
   });
   document.getElementById("art-line").addEventListener("click", () => {
-    if (!source) return;
+    if (!source || typeof source.setLineAmp !== "function") return;
     source.setLineAmp(source.lineAmp > 0 ? 0 : 0.4);
   });
-  document.getElementById("art-spike").addEventListener("click", () => source?.injectSpike(0));
+  document.getElementById("art-spike").addEventListener("click", () => source?.injectSpike?.(0));
   document.getElementById("preset").addEventListener("change", (e) => { if (e.target.value) applyPreset(e.target.value); });
 
   document.getElementById("btn-rec-start").addEventListener("click", () => {
@@ -171,6 +172,13 @@ function bindControls() {
   });
   document.getElementById("btn-export").addEventListener("click", exportSession);
   document.getElementById("btn-replay").addEventListener("click", replaySession);
+  document.getElementById("session-file").addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const text = await file.text();
+    loadSessionFile(text, file.name);
+    e.target.value = "";
+  });
 }
 
 function bindTabs() {
@@ -229,15 +237,15 @@ function applyPreset(name) {
   document.getElementById("noise-val").textContent = p.noise.toFixed(2);
   document.getElementById("master-amp").value = p.master;
   document.getElementById("master-amp-val").textContent = p.master.toFixed(2);
-  if (source) {
+  if (source && typeof source.setBandAmps === "function") {
     source.setBandAmps({ delta: p.delta, theta: p.theta, alpha: p.alpha, beta: p.beta, gamma: p.gamma });
     source.setNoise(p.noise);
     source.setMasterAmp(p.master);
-    source.clearDisconnect();
-    source.setLineAmp(0);
-    if (p.blink) source.injectBlink(0);
-    if (p.disconnect) source.injectDisconnect(0);
-    if (p.line) source.setLineAmp(0.4);
+    source.clearDisconnect?.();
+    source.setLineAmp?.(0);
+    if (p.blink) source.injectBlink?.(0);
+    if (p.disconnect) source.injectDisconnect?.(0);
+    if (p.line) source.setLineAmp?.(0.4);
   }
 }
 
@@ -316,6 +324,40 @@ function replaySession() {
   }
   document.getElementById("rec-status").textContent = `Replayed ${count} samples`;
   waveRenderer.resume();
+}
+
+function loadSessionFile(rawJsonl, name = "session") {
+  try {
+    stopGenerator();
+    buffers.forEach((b) => b.clear());
+    const pktSource = new EEGPacketSource({
+      rawJsonl,
+      onFrame(frame) {
+        const n = Math.min(CHANNEL_COUNT, frame.length);
+        for (let c = 0; c < n; c++) buffers[c].write(frame[c]);
+      },
+    });
+    if (pktSource.diagnostics.length) {
+      console.warn("[eeg-lab] session diagnostics:", pktSource.diagnostics);
+    }
+    source = pktSource;
+    analyzer.setSampleRate(pktSource.sampleRate);
+    waveRenderer.setSampleRate(pktSource.sampleRate);
+    pktSource.start();
+    setGenState("running");
+    document.getElementById("btn-start").disabled = true;
+    document.getElementById("btn-stop").disabled = false;
+    const sim = pktSource.simulated ? "SIMULATED" : "recorded";
+    document.getElementById("rec-status").textContent =
+      `Playing ${name} (${pktSource.frameCount} frames, ${sim})`;
+    if (pktSource.diagnostics.length) {
+      document.getElementById("rec-status").textContent +=
+        ` · ${pktSource.diagnostics.length} diagnostic(s)`;
+    }
+  } catch (err) {
+    console.error(err);
+    document.getElementById("rec-status").textContent = `Load failed: ${err.message}`;
+  }
 }
 
 init();
