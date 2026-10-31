@@ -19,7 +19,7 @@ No build step, no bundler, no backend.
 ```
 SignalSource
   └── SyntheticEEGSource   (seeded, deterministic)
-  └── EEGPacketSource      (future — protocol/EEGStream.md adapter)
+  └── EEGPacketSource      (protocol/EEGStream.md session JSONL adapter)
 
 ChannelBuffer[]            (circular, fixed capacity)
 SignalAnalyzer             (windowed Hann PSD, band powers, stats)
@@ -30,9 +30,14 @@ SessionRecorder / Player   (JSONL, raw immutable + derived separate)
 
 Signal generation and analysis run on their own timers. Rendering uses `requestAnimationFrame` and never drives the sample clock.
 
-### Future real-side integration
+### Real-side integration boundary
 
-Do not invent a new acquisition protocol. A future `EEGPacketSource` should decode packets matching `protocol/EEGStream.md` and call the same `onFrame(frame, timestampUs)` callback. Visualization and analysis layers stay unchanged.
+`EEGPacketSource` decodes packets matching `protocol/EEGStream.md` (session JSONL v1/v2) and calls the same `onFrame(frame, timestampUs)` callback. Visualization and analysis layers stay unchanged.
+
+- **Now:** load a `.eeg` / JSONL session from disk (host `eeg_record` output or browser export).
+- **Not yet:** WebSerial / WebUSB / live USB stream — same class, different transport into `load()` / constructor.
+
+Gaps, duplicates, and non-finite samples are **diagnosed, never auto-repaired**.
 
 ## Analysis notes
 
