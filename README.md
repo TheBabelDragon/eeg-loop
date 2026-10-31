@@ -200,8 +200,22 @@ eeg-loop/
 |-- experiments/          # reproducible session records
 |-- tests/
 |-- tools/
+|-- web/                  # browser EEG laboratory (synthetic, offline)
 `-- docs/
 ```
+
+## Browser EEG Laboratory
+
+Experimental offline visualization lab under [`web/`](web/).
+
+```bash
+cd web && python3 -m http.server 8765
+# open http://localhost:8765/
+```
+
+Synthetic multi-channel EEG generator, oscilloscope, live spectrum, artifact injection, session record/export/replay. All signals are **SIMULATED**. No medical claims, no real hardware I/O.
+
+See [`web/README.md`](web/README.md) for architecture and the future `EEGPacketSource` adapter boundary (preserves `protocol/EEGStream.md`).
 
 ## License
 
